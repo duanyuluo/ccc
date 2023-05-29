@@ -30,18 +30,21 @@ Output the string of N characters representing the final state of the cells, in 
 """
 
 from ccc import input, replace_input
+
 replace_input(__file__[-10:-3] + ".log")
 
 cells_cnt, gen_cnt = tuple([int(s) for s in input().split(" ")])
 cells_status = input()
 
+
 def get_status(idx, delta=0):
     return int(cells_status[(idx + delta + cells_cnt) % cells_cnt])
+
 
 for gen in range(0, gen_cnt):
     new_gen = ""
     for idx in range(cells_cnt):
         new_gen += (get_status(idx, -1) ^ get_status(idx, 1)) and "1" or "0"
     cells_status = new_gen
-    
+
 print(cells_status)

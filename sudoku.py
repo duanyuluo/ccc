@@ -1,13 +1,16 @@
-
-def output(s, end = False, highlight=False, index=""):
+def output(s, end=False, highlight=False, index=""):
     pass
+
+
 # ************************ MUST REMOVE BEFORE SUMMIT ************************
 from ccc import make_io
+
 input, output = make_io(__file__, "tc6")
 # ***************************************************************************
 
 from copy import deepcopy
 from itertools import combinations
+
 
 class SudokuException(Exception):
     def __init__(self, cell, sequence, msg) -> None:
@@ -16,7 +19,10 @@ class SudokuException(Exception):
         self.seq = sequence
         self.msg = msg
 
-from collections.abc import Iterable, Iterator
+
+from collections.abc import Iterator
+
+
 class MatrixIterator(Iterator):
     def __init__(self, iter_obj) -> None:
         super().__init__()
@@ -31,7 +37,7 @@ class MatrixIterator(Iterator):
         return value
 
 
-class Cell():
+class Cell:
     def __init__(self, r, c, m) -> None:
         self.row_index, self.col_index = r, c
         self.matrix = m
@@ -51,13 +57,16 @@ class Cell():
         if type(value) == set and len(value) == 1:
             self.matrix.data[self.row_index][self.col_index] = value.copy().pop()
         else:
-            self.matrix.data[self.row_index][self.col_index] = type(value) == set and value.copy() or value
+            self.matrix.data[self.row_index][self.col_index] = (
+                type(value) == set and value.copy() or value
+            )
 
     def is_exactly(self):
         v = self.get_value()
         return type(v) == int
 
-class Sequence():
+
+class Sequence:
     ROW, COLUMN, BLOCK, TIP = "R", "C", "B", "T"
 
     def __init__(self, seq_type, index, matrix) -> None:
@@ -75,7 +84,11 @@ class Sequence():
         return " ".join([str(c) for (i, c) in enumerate(self)])
 
     def __repr__(self) -> str:
-        return "[%s] #%d : %s" % (self.seq_type, self.index, " ".join([str(c) for (i, c) in enumerate(self)]))
+        return "[%s] #%d : %s" % (
+            self.seq_type,
+            self.index,
+            " ".join([str(c) for (i, c) in enumerate(self)]),
+        )
 
     def __iter__(self):
         return MatrixIterator(self)
@@ -83,7 +96,9 @@ class Sequence():
     def __next__(self):
         if self.cur >= self.matrix.size:
             raise StopIteration
-        elif self.seq_type == Sequence.TIP and self.cur >= len(self.matrix.tips_seq[self.tips_name[self.index]]):
+        elif self.seq_type == Sequence.TIP and self.cur >= len(
+            self.matrix.tips_seq[self.matrix.tips_name[self.index]]
+        ):
             raise StopIteration
         v = self[self.cur]
         self.cur += 1
@@ -114,16 +129,21 @@ class Sequence():
         for cell in self:
             cell_options = cell.get_value()
             if cell.is_exactly():
-                cell_options = set([cell_options, ])
+                cell_options = set(
+                    [
+                        cell_options,
+                    ]
+                )
             if cell_options <= superset:
                 yield cell, set()
             elif cell_options & superset:
                 yield cell, cell_options - superset
 
-class Matrix():
+
+class Matrix:
     NUMBERS = {i for i in range(1, 10)}
 
-    def __init__(self, data, tips_data = [], tips_nums = {}) -> None:
+    def __init__(self, data, tips_data=[], tips_nums={}) -> None:
         self.data = deepcopy(data)
         self.tips_data = tips_data
         self.tips_num = tips_nums
@@ -167,6 +187,7 @@ class Matrix():
 
     def sequences(self):
         from itertools import chain
+
         return chain(self.rows(), self.columns(), self.blocks(), self.tips())
 
     def cells(self):
@@ -182,7 +203,8 @@ class Matrix():
             row_str = " ".join([cell_fmt(c) for c in row])
             output(row_str + leader(i))
 
-class Guessture():
+
+class Guessture:
     def __init__(self, matrix, row, col, guessture) -> None:
         self.guess_matrix = matrix.copy()
         self.backup_matrix = matrix
@@ -202,10 +224,13 @@ class Guessture():
 
     @staticmethod
     def make_cell_guesstures(cell):
-        return [Guessture(cell.matrix, cell.row_index, cell.col_index, guess) \
-                for guess in cell.get_value()]
+        return [
+            Guessture(cell.matrix, cell.row_index, cell.col_index, guess)
+            for guess in cell.get_value()
+        ]
 
-class Resolver():
+
+class Resolver:
     def __init__(self, matrix) -> None:
         self.counters = {"Resolve Cycles": 0, "Sequence Rules": 0, "Guess Times": 0}
         self.matrix = matrix
@@ -241,12 +266,12 @@ class Resolver():
         if self.guesstures and self.guesstures[-1]:
             self.counters["Guess Times"] += 1
             self.matrix = self.guesstures[-1][-1].replace_matrix(self.matrix)
-            output("GUESS TRY ... %s" % (self.guesstures[-1][-1], ), highlight=True)
+            output("GUESS TRY ... %s" % (self.guesstures[-1][-1],), highlight=True)
             self.summary_guesstures()
 
     def rollback_guessture_env(self):
         while self.guesstures:
-            output("GUESS FAIL ... %s" % (self.guesstures[-1][-1], ), highlight=True)
+            output("GUESS FAIL ... %s" % (self.guesstures[-1][-1],), highlight=True)
 
             self.matrix = self.guesstures[-1].pop(-1).rollback_matrix()
             if len(self.guesstures[-1]) > 0:
@@ -255,7 +280,7 @@ class Resolver():
         self.summary_guesstures()
 
     def summit_guessture_env(self):
-        output("GUESS SUC ... %s" % (self.guesstures[-1][-1], ), highlight=True)
+        output("GUESS SUC ... %s" % (self.guesstures[-1][-1],), highlight=True)
         self.summary_guesstures()
 
     def resolve_guess(self):
@@ -306,16 +331,22 @@ class Resolver():
         for guess_list in self.guesstures:
             output(guess_list)
 
+
 def rule_sequence_unique(seq):
     if seq.seq_type == Sequence.TIP:
         return False
 
     modified = False
-    output("RULE %9s on [%s] #%d : %s" % ("UNIQUE", seq.seq_type, seq.index, str(seq)), highlight=True)
+    output(
+        "RULE %9s on [%s] #%d : %s" % ("UNIQUE", seq.seq_type, seq.index, str(seq)),
+        highlight=True,
+    )
     have_numbers_list = [c.get_value() for c in seq if c.is_exactly()]
     have_numbers = set(have_numbers_list)
     if len(have_numbers_list) != len(have_numbers):
-        raise SudokuException(None, seq, "Confirmed Numbers of sequence have CONFLICTION!")
+        raise SudokuException(
+            None, seq, "Confirmed Numbers of sequence have CONFLICTION!"
+        )
     for cell in seq:
         if not cell.is_exactly():
             old_options = cell.get_value()
@@ -325,18 +356,24 @@ def rule_sequence_unique(seq):
             if new_options != old_options:
                 modified = True
                 cell.set_value(new_options)
-                output("(%d, %d) : %s" % (cell.row_index, cell.col_index, cell.get_value()))
+                output(
+                    "(%d, %d) : %s" % (cell.row_index, cell.col_index, cell.get_value())
+                )
                 output(" <- %s - %s" % (old_options, have_numbers))
         else:
             pass
     return modified
+
 
 def rule_sequence_exclude(seq):
     if seq.seq_type == Sequence.TIP:
         return False
 
     modified = False
-    output("RULE %9s on [%s] #%d : %s" % ("EXCLUDE", seq.seq_type, seq.index, str(seq)), highlight=True)
+    output(
+        "RULE %9s on [%s] #%d : %s" % ("EXCLUDE", seq.seq_type, seq.index, str(seq)),
+        highlight=True,
+    )
     unexactly_cells = [c for c in seq if not c.is_exactly()]
     for cell in unexactly_cells:
         cell_options = cell.get_value()
@@ -350,24 +387,35 @@ def rule_sequence_exclude(seq):
                 other_diff_cells.append((other_cell, other_options))
 
         if len(other_same_cells) > 0 and len(other_diff_cells) > 0:
-            output("  ==> %s" % (other_same_cells, ))
+            output("  ==> %s" % (other_same_cells,))
             for diff_cell, diff_option in other_diff_cells:
                 output("  <== %20s -> %s" % (repr(diff_cell), diff_option))
 
         if len(other_same_cells) == len(cell_options) and len(other_diff_cells) > 0:
-
             modified = True
             for update_cell, update_option in other_diff_cells:
-                    if len(update_option) == 0:
-                        raise SudokuException(update_cell, seq, "NO CHIOCE on the cell by other cells excludes!")
+                if len(update_option) == 0:
+                    raise SudokuException(
+                        update_cell,
+                        seq,
+                        "NO CHIOCE on the cell by other cells excludes!",
+                    )
 
-                    old_options = update_cell.get_value()
-                    update_cell.set_value(update_option)
-                    output("(%d, %d) : %20s <- %s - %s" % \
-                        (update_cell.row_index, update_cell.col_index, \
-                        update_option, old_options, cell_options))
+                old_options = update_cell.get_value()
+                update_cell.set_value(update_option)
+                output(
+                    "(%d, %d) : %20s <- %s - %s"
+                    % (
+                        update_cell.row_index,
+                        update_cell.col_index,
+                        update_option,
+                        old_options,
+                        cell_options,
+                    )
+                )
             break
     return modified
+
 
 def rule_sequence_tip(seq):
     if seq.seq_type != Sequence.TIP:
@@ -376,7 +424,11 @@ def rule_sequence_tip(seq):
     modified = False
     tip_name = lambda seq: seq.matrix.tips_name[seq.index]
     tip_sum = lambda seq: seq.matrix.tips_num[tip_name(seq)]
-    output("RULE %9s on [%s] #%s : %3d <- %s" % ("TIPS", seq.seq_type, tip_name(seq), tip_sum(seq), str(seq)), highlight=True)
+    output(
+        "RULE %9s on [%s] #%s : %3d <- %s"
+        % ("TIPS", seq.seq_type, tip_name(seq), tip_sum(seq), str(seq)),
+        highlight=True,
+    )
 
     unknown_cells = [cell for cell in seq if not cell.is_exactly()]
     known_cells_sum = sum([cell.get_value() for cell in seq if cell.is_exactly()])
@@ -387,7 +439,16 @@ def rule_sequence_tip(seq):
     if len(unknown_cells) > 0:
         if len(unknown_cells) == 1:
             cell = unknown_cells[0]
-            output("(%d, %d) %d <- %d - sum(%s)" % (cell.row_index, cell.col_index, rest_cells_sum, tip_sum(seq), str(seq)))
+            output(
+                "(%d, %d) %d <- %d - sum(%s)"
+                % (
+                    cell.row_index,
+                    cell.col_index,
+                    rest_cells_sum,
+                    tip_sum(seq),
+                    str(seq),
+                )
+            )
             cell.set_value(rest_cells_sum)
             modified = True
         else:
@@ -411,19 +472,27 @@ def rule_sequence_tip(seq):
 
     return modified
 
-def rule_matrix_guessture(slv : Resolver):
+
+def rule_matrix_guessture(slv: Resolver):
     for cell in slv.matrix.cells():
         if not cell.is_exactly():
             slv.guesstures.append(Guessture.make_cell_guesstures(cell))
             break
 
+
 matrix_size, area_rules_cnt = tuple([int(p) for p in input().split(" ")])
-area_rules = {i[0]: int(i[1]) for i in [input().split(" ") for ln in range(0, area_rules_cnt)]}
+area_rules = {
+    i[0]: int(i[1]) for i in [input().split(" ") for ln in range(0, area_rules_cnt)]
+}
 cell_fmt = lambda x: x[0].isdigit() and (int(x), 0) or (int(x[1:]), x[0])
-matrix_data = [[cell_fmt(i) for i in input().split(" ")] for ln in range(0, matrix_size)]
-matrix = Matrix([[i[0] for i in ln] for ln in matrix_data], \
-                [[i[1] for i in ln] for ln in matrix_data], \
-                area_rules)
+matrix_data = [
+    [cell_fmt(i) for i in input().split(" ")] for ln in range(0, matrix_size)
+]
+matrix = Matrix(
+    [[i[0] for i in ln] for ln in matrix_data],
+    [[i[1] for i in ln] for ln in matrix_data],
+    area_rules,
+)
 
 matrix.output()
 for seq in matrix.sequences():

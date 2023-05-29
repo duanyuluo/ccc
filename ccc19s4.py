@@ -13,34 +13,39 @@ Output a single integer, the maximum possible total score.
 """
 
 from ccc import input, replace_input
+
 replace_input(__file__[-10:-3] + "_1.log")
 
-view_cnt, max_per_day = tuple([int(p) for p in input().split(" ")])
-views_score = [int(p) for p in input().split(" ")]
+view_cnt, max_per_day = tuple([int(p) for p in str(input()).split(" ")])
+views_score = [int(p) for p in str(input()).split(" ")]
 days_cnt = view_cnt // max_per_day + ((view_cnt % max_per_day) > 0 and 1 or 0)
 
 # (start pos, flex cnt) -> max scores)
 max_scores_pool = {}
+
+
 def get_max_scores(start_idx, flex_cnt):
     if start_idx >= len(views_score):
         return 0
     if (start_idx, flex_cnt) in max_scores_pool:
         return max_scores_pool[(start_idx, flex_cnt)][0]
     if flex_cnt == 0:
-        max_score = max(views_score[start_idx:start_idx+max_per_day-1])
+        max_score = max(views_score[start_idx : start_idx + max_per_day - 1])
         max_score += get_max_scores(start_idx + max_per_day, 0)
         max_scores_pool[(start_idx, flex_cnt)] = (max_score, max_per_day)
     else:
         the_max_score = 0
         the_max_len = 0
         for vc in range(max_per_day - flex_cnt, max_per_day + 1):
-            max_score = max(views_score[start_idx:start_idx+vc])
-            max_score += get_max_scores(start_idx+vc, flex_cnt-(max_per_day-vc))
+            max_score = max(views_score[start_idx : start_idx + vc])
+            flex_cnt_p = flex_cnt - (max_per_day - vc)
+            max_score += get_max_scores(start_idx + vc, flex_cnt_p)
             if max_score > the_max_score:
                 the_max_score = max_score
                 the_max_len = vc
         max_scores_pool[(start_idx, flex_cnt)] = (the_max_score, the_max_len)
     return max_scores_pool[(start_idx, flex_cnt)][0]
+
 
 print(views_score)
 print(get_max_scores(0, days_cnt * max_per_day - view_cnt))
